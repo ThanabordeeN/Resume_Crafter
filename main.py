@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from llms.CV_Generate import Job_Descriptions_Gen_CoT
 from llms.CV_Scan import Job_Scan_CoT
+from backend.model import save_job_to_db, save_scan_result_to_db
 
 app = FastAPI()
 
@@ -41,7 +42,9 @@ async def generate_job_description(request: JobDescriptionRequest):
             organization_description=request.organization_description,
             experience=request.experience
         )
-        return {"Job_Title": request.job_title, "Job_Description": result.job_description} , 200
+        save_job_to_db(job_title=request.job_title, job_description=result.job_description)
+        result = {"Job_Title": request.job_title, "Job_Description": result.job_description}
+        return  result, 200
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -55,6 +58,7 @@ async def scan_cv(request: CVScanRequest):
         name = result.name
         email = result.email
         phone = result.phone
+        save_scan_result_to_db(name=name, score=score, reason=reason, email=email, phone=phone)
         result = {
             "name": name,
             "score": score,
@@ -62,6 +66,7 @@ async def scan_cv(request: CVScanRequest):
             "email": email,
             "phone": phone
             }
+        
         
         return result , 200
     except Exception as e:
