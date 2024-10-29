@@ -11,7 +11,7 @@ import redis
 
 # Configuration
 DB_FILENAME = 'jobs.db'
-REDIS_HOST = 'localhost'
+REDIS_HOST = 'redis'  # Assuming the Redis container is named 'redis' in the Docker network
 REDIS_PORT = 6379
 REDIS_DB = 0
 

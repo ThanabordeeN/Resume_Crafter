@@ -1,10 +1,11 @@
 import os
 import dspy
-from litellm import completion
 import fitz  # PyMuPDF
 import io
 
-lm = dspy.LM('openai/gpt-4o-mini',api_key=os.environ["OPENAI_API_KEY"] , max_tokens=None)
+
+
+lm = dspy.LM(os.getenv('MODEL',"openai/gpt-4o-mini"),api_key=os.getenv("OPENAI_API_KEY") , max_tokens=None)
 dspy.configure(lm=lm)
 
 class Job_Scan(dspy.Signature):
