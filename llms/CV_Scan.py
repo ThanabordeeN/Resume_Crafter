@@ -1,9 +1,7 @@
 import os
 import dspy
 import fitz  # PyMuPDF
-import io
-
-
+import asyncio
 
 lm = dspy.LM(os.getenv('MODEL',"openai/gpt-4o-mini"),api_key=os.getenv("OPENAI_API_KEY") , max_tokens=None)
 dspy.configure(lm=lm)
@@ -23,34 +21,38 @@ class Job_Scan_CoT(dspy.Module):
         super().__init__()
         self.progress = dspy.ChainOfThought(Job_Scan)
         
-    def run(self, resumes, job_descriptions):
-        resumes = self.ocr_pdf(resumes)
-        return self.progress(resumes=resumes, job_descriptions = job_descriptions)
+    def run(self, file_content, job_descriptions):
+        text = self.process_pdf(file_content)
+        return self.progress(resumes=text, job_descriptions=job_descriptions)
     
-    def ocr_pdf(self,base64_pdf):
-        import pytesseract
-        from PIL import Image
-        pdf = self.base64_to_pdf(base64_pdf)
-        
-        doc = fitz.open(pdf)
+    async def arun(self, file_content, job_descriptions):
+        # Run synchronous operation in a thread pool
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            None,
+            self.run,
+            file_content,
+            job_descriptions
+        )
+    
+    def process_pdf(self, file_content):
+        doc = fitz.open(stream=file_content, filetype="pdf")
         text = ""
         for page_num in range(len(doc)):
             page = doc.load_page(page_num)
             text += page.get_text()
-        if text == "":
+            
+        if not text.strip():
+            # Only perform OCR if no text was extracted
+            import pytesseract
+            from PIL import Image
+            
             for page_num in range(len(doc)):
                 page = doc.load_page(page_num)
-                image_list = page.get_images(full=True)
-                for image in image_list:
-                    xref = image[0]
-                    base_image = doc.extract_image(xref)
-                    image_bytes = base_image["image"]
-                    image = Image.open(io.BytesIO(image_bytes))
-                    text += pytesseract.image_to_string(image , lang='eng')
+                pix = page.get_pixmap()
+                img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                extracted_text = pytesseract.image_to_string(img, lang='eng')
+                text += extracted_text
+                
+        doc.close()
         return text
-    def base64_to_pdf(self,base64_pdf):
-        import base64
-        import io
-        pdf_bytes = base64.b64decode(base64_pdf)
-        pdf = io.BytesIO(pdf_bytes)
-        return pdf

@@ -2,3 +2,4 @@ fastapi
 uvicorn
 dspy
 fitz
+pytesseract  # Add this for OCR support
