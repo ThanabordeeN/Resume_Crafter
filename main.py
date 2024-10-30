@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel , field_validator
 from llms.CV_Generate import Job_Descriptions_Gen_CoT
 from llms.CV_Scan import Job_Scan_CoT
 from backend.model import save_job_to_db, save_scan_result_to_db
@@ -31,6 +31,7 @@ class CVScanRequest(BaseModel):
 @app.post("/gen_job_desc/")
 async def generate_job_description(request: JobDescriptionRequest):
     job_gen = Job_Descriptions_Gen_CoT()
+    
     try:
         result = job_gen.run(
             job_title=request.job_title,
@@ -71,6 +72,10 @@ async def scan_cv(request: CVScanRequest):
         return result , 200
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
 
 if __name__ == "__main__":
     import uvicorn

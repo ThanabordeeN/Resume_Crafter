@@ -8,8 +8,8 @@ services:
     depends_on:
       - redis
     environment:
-      - OPENAI_API_KEY = "your_openai_api_key_here"
-      - MODEL = "Your_Model_Name_Here"
+      - OPENAI_API_KEY=awddaw
+      - MODEL=awdaw
     networks:
       - default
 
