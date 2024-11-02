@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Test</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
     <div class="container mt-5">
         <h1>Generate Job Description</h1>
@@ -20,12 +22,14 @@
             </div>
             <div class="form-group">
                 <label for="organization_description">Organization Description:</label>
-                <input type="text" class="form-control" id="organization_description" name="organization_description" required>
+                <input type="text" class="form-control" id="organization_description" name="organization_description"
+                    required>
             </div>
             <div class="form-group">
                 <label for="salary">Salary:</label>
                 <input type="text" class="form-control" id="salary" name="salary" required>
             </div>
+
             <div class="form-group">
                 <label for="position">Position:</label>
                 <input type="text" class="form-control" id="position" name="position" required>
@@ -35,6 +39,14 @@
                 <input type="text" class="form-control" id="experience" name="experience" required>
             </div>
             <div class="form-group">
+                <label for="work_hours">Work Hours:</label>
+                <input type="text" class="form-control" id="work_hours" name="work_hours" required>
+            </div>
+            <div class="form-group">
+                <label for="responsibilities">Responsibilities:</label>
+                <input type="text" class="form-control" id="responsibilities" name="responsibilities" required>
+            </div>
+            <div class="form-group">
                 <label for="skills">Skills:</label>
                 <input type="text" class="form-control" id="skills" name="skills" required>
             </div>
@@ -42,46 +54,72 @@
                 <label for="output_language">Output Language:</label>
                 <input type="text" class="form-control" id="output_language" name="output_language" required>
             </div>
+
             <button type="submit" class="btn btn-primary">Generate</button>
         </form>
+        <pre id="jobTitle" class="bg-light p-3"></pre>
         <pre id="jobDescResult" class="bg-light p-3"></pre>
 
         <h1>Scan CV</h1>
         <form id="cvScanForm" class="mb-5">
             <div class="form-group">
                 <label for="resumes">Resumes (PDF):</label>
-                <input type="file" class="form-control-file" id="resumes" name="resumes" accept="application/pdf" required>
+                <input type="file" class="form-control-file" id="resumes" name="resumes" accept="application/pdf"
+                    required>
             </div>
             <div class="form-group">
                 <label for="job_descriptions">Job Descriptions:</label>
-                <textarea class="form-control" id="job_descriptions" name="job_descriptions" rows="5" required></textarea>
+                <textarea class="form-control" id="job_descriptions" name="job_descriptions" rows="5"
+                    required></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Scan</button>
         </form>
-        <pre id="cvScanResult" class="bg-light p-3"></pre>
+        <pre id="name" class="bg-light p-3"></pre>
+        <pre id="score" class="bg-light p-3"></pre>
+        <pre id="email" class="bg-light p-3"></pre>
+        <pre id="phone" class="bg-light p-3"></pre>
+        <pre id="reason" class="bg-light p-3"></pre>
+
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        document.getElementById('jobDescForm').addEventListener('submit', async function(event) {
+        document.getElementById('jobDescForm').addEventListener('submit', async function (event) {
             event.preventDefault();
             const formData = new FormData(event.target);
             const data = Object.fromEntries(formData.entries());
+            console.log(data);
             const response = await fetch('/gen_job_desc/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
-            const result = await response.json();
-            document.getElementById('jobDescResult').textContent = JSON.stringify(result, null, 2);
+            try {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const result = await response.json();
+                document.getElementById('jobTitle').textContent = result.job_title;
+                document.getElementById('jobDescResult').innerHTML =
+                    `Organization Description: ${result.organization_description}\n\n` +
+                    `Job Description: ${result.job_description}\n\n` +
+                    `Responsibilities: ${result.responsibilities}\n\n` +
+                    `Experience: ${result.experience}\n\n` +
+                    `Skills: ${result.skills}\n\n` +
+                    `Salary: ${result.salary}\n\n` +
+                    `Work Hours: ${result.work_hours}`;
+            } catch (error) {
+                console.error('Error:', error);
+                alert(`An error occurred while generating the job description ${error.message}`);
+            }
         });
 
-        document.getElementById('cvScanForm').addEventListener('submit', async function(event) {
+        document.getElementById('cvScanForm').addEventListener('submit', async function (event) {
             event.preventDefault();
             const formData = new FormData();
-            
+
             const fileInput = document.getElementById('resumes');
             const file = fileInput.files[0];
             if (!file) {
@@ -97,19 +135,33 @@
                     method: 'POST',
                     body: formData
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const result = await response.json();
-                document.getElementById('cvScanResult').textContent = JSON.stringify(result, null, 2);
+                const score = result['score'];
+                const name = result['name'];
+                const email = result['email'];
+                const phone = result['phone'];
+                const reason = result['reason'];
+
+                document.getElementById('name').textContent = `Name: ${name}`;
+                document.getElementById('score').textContent = `Score: ${score}`;
+                document.getElementById('email').textContent = `Email: ${email}`;
+                document.getElementById('phone').textContent = `Phone: ${phone}`;
+                document.getElementById('reason').textContent = `Reason: ${reason}`;
+
+
             } catch (error) {
                 console.error('Error:', error);
-                document.getElementById('cvScanResult').textContent = `Error: ${error.message}`;
+                document.getElementById('name').textContent = `Error: ${error.message}`;
+
             }
         });
 
     </script>
 </body>
+
 </html>

@@ -21,19 +21,9 @@ class Job_Scan_CoT(dspy.Module):
         super().__init__()
         self.progress = dspy.ChainOfThought(Job_Scan)
         
-    def run(self, file_content, job_descriptions):
+    def forward(self, file_content, job_descriptions):
         text = self.process_pdf(file_content)
         return self.progress(resumes=text, job_descriptions=job_descriptions)
-    
-    async def arun(self, file_content, job_descriptions):
-        # Run synchronous operation in a thread pool
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(
-            None,
-            self.run,
-            file_content,
-            job_descriptions
-        )
     
     def process_pdf(self, file_content):
         doc = fitz.open(stream=file_content, filetype="pdf")
